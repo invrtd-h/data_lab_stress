@@ -2,6 +2,14 @@
 #include <random>
 #include <cstdio>
 
+int bitAndTest(int x, int y) {
+    return x & y;
+}
+
+int getByteTest(int x, int n) {
+    return int(*((unsigned char*)(&x)+n));
+}
+
 int isLessOrEqualTest(int x, int y) {
     return x <= y;
 }
@@ -9,26 +17,31 @@ int isLessOrEqualTest(int x, int y) {
 struct FuncHolder {
     enum {II, III, UU, UI} tag;
     void *func, *test;
+    int ubd;
     
     using ii = int (*)(int);
     using iii = int (*)(int, int);
     using uu = unsigned (*)(unsigned);
     using ui = unsigned (*)(int);
     
-    static FuncHolder from(ii f, ii g) {
-        return FuncHolder{II, (void*)f, (void*)g};
+    static FuncHolder from(ii f, ii g, int ubd = 0) {
+        return FuncHolder{II, (void*)f, (void*)g, ubd};
     }
-    static FuncHolder from(iii f, iii g) {
-        return FuncHolder{III, (void*)f, (void*)g};
+    static FuncHolder from(iii f, iii g, int ubd = 0) {
+        return FuncHolder{III, (void*)f, (void*)g, ubd};
     }
-    static FuncHolder from(uu f, uu g) {
-        return FuncHolder{UU, (void*)f, (void*)g};
+    static FuncHolder from(uu f, uu g, int ubd = 0) {
+        return FuncHolder{UU, (void*)f, (void*)g, ubd};
     }
-    static FuncHolder from(ui f, ui g) {
-        return FuncHolder{UI, (void*)f, (void*)g};
+    static FuncHolder from(ui f, ui g, int ubd = 0) {
+        return FuncHolder{UI, (void*)f, (void*)g, ubd};
     }
     
     bool operator()(int t, int u = 0) const {
+        if (ubd != 0) {
+            u = u < 0 ? -u : u;
+            u %= ubd;
+        }
         if (tag == II) {
             auto func_ret = ii(func)(t);
             auto test_ret = ii(test)(t);
@@ -70,15 +83,28 @@ int main() {
     std::random_device rd;
     std::mt19937_64 gen(rd());
     
-    auto test_obj = FuncHolder::from(isLessOrEqual, isLessOrEqualTest);
+    FuncHolder test_objs[] = {
+            FuncHolder::from(bitAnd, bitAndTest),
+            FuncHolder::from(getByte, getByteTest, 4),
+            FuncHolder::from(isLessOrEqual, isLessOrEqualTest),
+    };
     
-    for (int i = 0; i < 100000000; ++i) {
-        auto x = gen();
-        auto y = gen();
-        if (!test_obj(*(int*)(&x), *(int*)(&y))) {
-            printf("%d-th test failed\n", i);
-            return 0;
+    auto N = std::extent<decltype(test_objs)>::value;
+    for (int i = 0; i < N; ++i) {
+        const auto& test_obj = test_objs[i];
+        bool succeed = true;
+        for (int j = 0; j < 10000000; ++j) {
+            auto x = gen();
+            auto y = gen();
+            if (!test_obj(*(int*)(&x), *(int*)(&y))) {
+                printf("%d-th function, %d-th test failed\n", i, j);
+                succeed = false;
+                break;
+            }
+        }
+        if (succeed) {
+            printf("%d-th function succeed\n", i);
         }
     }
-    printf("test may succeed\n");
+    printf("\ntest end\n");
 }
