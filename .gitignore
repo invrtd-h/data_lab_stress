@@ -1,3 +1,4 @@
 # 프로젝트 제외 경로
 /cmake-build-debug/
 data_lab.cpp
+data_lab.hpp
