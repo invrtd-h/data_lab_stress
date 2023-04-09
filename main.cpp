@@ -1,8 +1,9 @@
 #include "data_lab.hpp"
 #include <bitset>
-#include <random>
+#include <cmath>
 #include <cstdio>
 #include <iostream>
+#include <random>
 
 int bitAndTest(int x, int y) {
     return x & y;
@@ -35,6 +36,18 @@ int fitsBitsTest(int x, int n) {
     return -(1L << n) <= x && x < (1L << n);
 }
 
+int divpwr2Test(int x, int n) {
+    return x / (1<<n);
+}
+
+int negateTest(int x) {
+    return -x;
+}
+
+int isPositiveTest(int x) {
+    return x > 0;
+}
+
 int isLessOrEqualTest(int x, int y) {
     return x <= y;
 }
@@ -43,6 +56,40 @@ int logicalShiftTest(int x, int n) {
     unsigned y = *(unsigned*)(&x);
     y>>=n;
     return *(int*)(&y);
+}
+
+int ilog2Test(int x) {
+    if (x <= 0) {
+        return -1;
+    }
+    int n = 0;
+    for (; x; x /= 2) {
+        ++n;
+    }
+    return n - 1;
+}
+
+unsigned float_neg_test(unsigned uf) {
+    float f = *(float*)(&uf);
+    if (std::isnan(f)) {
+        return uf;
+    }
+    f = -f;
+    return *(unsigned*)(&f);
+}
+
+unsigned float_i2f_test(int x) {
+    auto f = (float)x;
+    return *(unsigned*)(&f);
+}
+
+unsigned float_twice_test(unsigned uf) {
+    float f = *(float*)(&uf);
+    if (std::isnan(f)) {
+        return uf;
+    }
+    f = 2 * f;
+    return *(unsigned*)(&f);
 }
 
 struct FuncHolder {
@@ -97,17 +144,22 @@ struct FuncHolder {
             auto test_ret = uu(test)(*(unsigned*)(&t));
             if (func_ret != test_ret) {
                 printf("failed %u\n", t);
-                printf("got %d, expected %d\n", func_ret, test_ret);
-                std::cout << std::bitset<32>(*(unsigned*)(&t)).to_string() << std::endl;
+                printf("got %u, expected %u\n", func_ret, test_ret);
+                std::cout << "t:\t\t" << std::bitset<32>(*(unsigned*)(&t)).to_string() << std::endl;
+                std::cout << "got:\t" << std::bitset<32>(*(unsigned*)(&func_ret)).to_string() << std::endl;
+                std::cout << "expect:\t" << std::bitset<32>(*(unsigned*)(&test_ret)).to_string() << std::endl;
                 return false;
             }
         } else if (tag == UI) {
+            t %= 1<<23;
             auto func_ret = ui(func)(t);
             auto test_ret = ui(test)(t);
             if (func_ret != test_ret) {
                 printf("failed %d\n", t);
-                printf("got %d, expected %d\n", func_ret, test_ret);
-                std::cout << std::bitset<32>(*(unsigned*)(&t)).to_string() << std::endl;
+                printf("got %u, expected %u\n", func_ret, test_ret);
+                std::cout << "t:\t\t" << std::bitset<32>(*(unsigned*)(&t)).to_string() << std::endl;
+                std::cout << "got:\t" << std::bitset<32>(*(unsigned*)(&func_ret)).to_string() << std::endl;
+                std::cout << "expect:\t" << std::bitset<32>(*(unsigned*)(&test_ret)).to_string() << std::endl;
                 return false;
             }
         }
@@ -126,7 +178,14 @@ int main() {
             FuncHolder::from(bitCount, bitCountTest),
             FuncHolder::from(bang, bangTest),
             FuncHolder::from(fitsBits, fitsBitsTest, 33),
+            FuncHolder::from(divpwr2, divpwr2Test, 31),
+            FuncHolder::from(negate, negateTest),
+            FuncHolder::from(isPositive, isPositiveTest),
             FuncHolder::from(isLessOrEqual, isLessOrEqualTest),
+            FuncHolder::from(ilog2, ilog2Test),
+            FuncHolder::from(float_neg, float_neg_test),
+            FuncHolder::from(float_i2f, float_i2f_test),
+            FuncHolder::from(float_twice, float_twice_test),
     };
     
     auto N = std::extent<decltype(test_objs)>::value;
@@ -151,6 +210,7 @@ int main() {
         }
         if (succeed) {
             printf("%d-th function succeed\n", i);
+            printf("======================\n");
             std::cout.flush();
         }
     }
