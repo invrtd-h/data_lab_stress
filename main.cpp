@@ -1,4 +1,5 @@
 #include "data_lab.hpp"
+#include <array>
 #include <bitset>
 #include <cmath>
 #include <cstdio>
@@ -117,7 +118,7 @@ struct FuncHolder {
     
     bool operator()(int t, int u = 0) const {
         if (ubd != 0) {
-            u = u < 0 ? -u : u;
+            u = u < 0 ? ~u : u;
             u %= ubd;
         }
         if (tag == II) {
@@ -167,9 +168,20 @@ struct FuncHolder {
     }
 };
 
+unsigned gen() {
+    static std::random_device rd;
+    static std::mt19937_64 gen(rd());
+    static constexpr unsigned pretest[] = {0, 1, 7, 0xFF, 1<<22, 1<<23, 0x40000000, 1u<<31, ~(1u<<31), INT32_MAX, UINT32_MAX};
+    static constexpr std::size_t n = std::extent<decltype(pretest)>::value;
+    
+    unsigned ret = gen();
+    if (ret % 32 == 0) {
+        return pretest[ret % n];
+    }
+    return ret;
+}
+
 int main() {
-    std::random_device rd;
-    std::mt19937_64 gen(rd());
     
     FuncHolder test_objs[] = {
             FuncHolder::from(bitAnd, bitAndTest),
@@ -189,6 +201,8 @@ int main() {
     };
     
     auto N = std::extent<decltype(test_objs)>::value;
+    
+    
     for (int i = 0; i < N; ++i) {
         const auto& test_obj = test_objs[i];
         bool succeed = true;
@@ -201,7 +215,7 @@ int main() {
                 printf("=================================\n");
                 succeed = false;
                 ++fail_num;
-                if (fail_num >= 10) {
+                if (fail_num >= 4) {
                     break;
                 } else {
                     continue;
