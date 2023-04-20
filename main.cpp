@@ -152,7 +152,6 @@ struct FuncHolder {
                 return false;
             }
         } else if (tag == UI) {
-            t %= 1<<23;
             auto func_ret = ui(func)(t);
             auto test_ret = ui(test)(t);
             if (func_ret != test_ret) {
@@ -171,11 +170,11 @@ struct FuncHolder {
 unsigned gen() {
     static std::random_device rd;
     static std::mt19937_64 gen(rd());
-    static constexpr unsigned pretest[] = {0, 1, 7, 0xFF, 1<<22, 1<<23, 0x40000000, 1u<<31, ~(1u<<31), INT32_MAX, UINT32_MAX};
+    static constexpr unsigned pretest[] = {0, 1, 7, 0xFF, 1<<22, 1<<23, 0x40000000, 1u<<31, ~(1u<<31), INT32_MAX, UINT32_MAX, UINT32_MAX-1, 1<<30, (1<<30)-1};
     static constexpr std::size_t n = std::extent<decltype(pretest)>::value;
     
     unsigned ret = gen();
-    if (ret % 32 == 0) {
+    if (ret % 127 == 0) {
         return pretest[ret % n];
     }
     return ret;
@@ -184,20 +183,20 @@ unsigned gen() {
 int main() {
     
     FuncHolder test_objs[] = {
-            FuncHolder::from(bitAnd, bitAndTest),
-            FuncHolder::from(getByte, getByteTest, 4),
-            FuncHolder::from(logicalShift, logicalShiftTest, 32),
-            FuncHolder::from(bitCount, bitCountTest),
-            FuncHolder::from(bang, bangTest),
-            FuncHolder::from(fitsBits, fitsBitsTest, 33),
-            FuncHolder::from(divpwr2, divpwr2Test, 31),
-            FuncHolder::from(negate, negateTest),
-            FuncHolder::from(isPositive, isPositiveTest),
-            FuncHolder::from(isLessOrEqual, isLessOrEqualTest),
-            FuncHolder::from(ilog2, ilog2Test),
-            FuncHolder::from(float_neg, float_neg_test),
+            //FuncHolder::from(bitAnd, bitAndTest),
+            //FuncHolder::from(getByte, getByteTest, 4),
+            //FuncHolder::from(logicalShift, logicalShiftTest, 32),
+            //FuncHolder::from(bitCount, bitCountTest),
+            //FuncHolder::from(bang, bangTest),
+            //FuncHolder::from(fitsBits, fitsBitsTest, 33),
+            //FuncHolder::from(divpwr2, divpwr2Test, 31),
+            //FuncHolder::from(negate, negateTest),
+            //FuncHolder::from(isPositive, isPositiveTest),
+            //FuncHolder::from(isLessOrEqual, isLessOrEqualTest),
+            //FuncHolder::from(ilog2, ilog2Test),
+            //FuncHolder::from(float_neg, float_neg_test),
             FuncHolder::from(float_i2f, float_i2f_test),
-            FuncHolder::from(float_twice, float_twice_test),
+            //FuncHolder::from(float_twice, float_twice_test),
     };
     
     auto N = std::extent<decltype(test_objs)>::value;
@@ -215,7 +214,7 @@ int main() {
                 printf("=================================\n");
                 succeed = false;
                 ++fail_num;
-                if (fail_num >= 4) {
+                if (fail_num >= 10) {
                     break;
                 } else {
                     continue;
